@@ -1,0 +1,10 @@
+model: "phi4"
+batch_interval: 10
+moderation_timeout: 60
+twitch:
+  server: "irc.chat.twitch.tv"
+  port: 6697
+  nickname: "your-bot"
+  client_id: "your-client-id"
+  client_secret: "your-client-secret"
+  channel: "#some-channel"
