@@ -1,6 +1,7 @@
 model: "phi4"
 batch_interval: 10
 moderation_timeout: 60
+use_completion: false
 twitch:
   server: "irc.chat.twitch.tv"
   port: 6697

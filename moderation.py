@@ -153,6 +153,7 @@ def moderate_batch(
     channel_info=None,
     token=None,
     client_id=None,
+    use_completion=False,
 ):
     try:
         context = {
@@ -175,24 +176,41 @@ def moderate_batch(
             right = moderate_batch(ollama_url, model, batch[mid:], channel_info, token, client_id)
             return left and right
 
-        # Prepare chat history for Ollama
-        chat_history = [
-            {"role": "system", "content": PROMPT_TEXT},
-            {"role": "user", "content": batch_json}
-        ]
-        ollama_payload = {
-            "model": model,
-            "messages": chat_history,
-            "stream": False
-        }
-        try:
-            resp = requests.post(f"{ollama_url}/api/chat", json=ollama_payload, timeout=120)
-            resp.raise_for_status()
-            result = resp.json()
-            latest = result.get("message", {}).get("content", "")
-        except Exception as e:
-            print(f"[ERROR][MODERATION][OLLAMA] Exception: {e}")
-            return False
+        if use_completion:
+            prompt = f"{PROMPT_TEXT}\n{batch_json}"
+            ollama_payload = {
+                "model": model,
+                "prompt": prompt,
+                "stream": False,
+                "format": "json",
+            }
+            try:
+                resp = requests.post(f"{ollama_url}/api/generate", json=ollama_payload, timeout=120)
+                resp.raise_for_status()
+                result = resp.json()
+                latest = result.get("response", "")
+            except Exception as e:
+                print(f"[ERROR][MODERATION][OLLAMA] Exception: {e}")
+                return False
+        else:
+            chat_history = [
+                {"role": "system", "content": PROMPT_TEXT},
+                {"role": "user", "content": batch_json}
+            ]
+            ollama_payload = {
+                "model": model,
+                "messages": chat_history,
+                "stream": False,
+                "format": "json",
+            }
+            try:
+                resp = requests.post(f"{ollama_url}/api/chat", json=ollama_payload, timeout=120)
+                resp.raise_for_status()
+                result = resp.json()
+                latest = result.get("message", {}).get("content", "")
+            except Exception as e:
+                print(f"[ERROR][MODERATION][OLLAMA] Exception: {e}")
+                return False
 
         print(f"[MODERATION]\n{latest}\n{'='*40}")
         if latest:
@@ -306,7 +324,7 @@ def batch_worker(stop_event, ollama_url, model, channel, client_id, token_manage
         run_queue.put((batch.copy(), channel_info))
         batch.clear()
 
-def run_worker(stop_event, ollama_url, model, client_id, token_manager, moderation_timeout=60):
+def run_worker(stop_event, ollama_url, model, client_id, token_manager, moderation_timeout=60, use_completion=False):
     try:
         while not stop_event.is_set() or not run_queue.empty():
             try:
@@ -317,7 +335,7 @@ def run_worker(stop_event, ollama_url, model, client_id, token_manager, moderati
             try:
                 ok = run_with_timeout(
                     moderate_batch,
-                    args=(ollama_url, model, batch, channel_info, token_manager.get_token(), client_id),
+                    args=(ollama_url, model, batch, channel_info, token_manager.get_token(), client_id, use_completion),
                     timeout=moderation_timeout,
                 )
             except KeyboardInterrupt:
