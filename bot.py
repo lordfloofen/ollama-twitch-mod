@@ -34,6 +34,7 @@ def main():
     model = config.get("model", "llama3")
     batch_interval = config.get("batch_interval", 2)
     moderation_timeout = config.get("moderation_timeout", 60)
+    use_completion = config.get("use_completion", False)
     max_openai_content_size = config.get("max_openai_content_size", 256000)
     max_rate_limit_retries = config.get("max_rate_limit_retries", 3)
     channel = twitch["channel"]
@@ -71,7 +72,8 @@ def main():
             model,
             twitch["client_id"],
             token_manager,
-            moderation_timeout
+            moderation_timeout,
+            use_completion
         ),
         daemon=True
     )
