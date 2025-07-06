@@ -6,6 +6,7 @@ import queue
 import requests
 import re
 import math
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
 # --- Message queue used for incoming messages from IRC ---
 message_queue = queue.Queue()
