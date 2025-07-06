@@ -59,8 +59,7 @@ def main():
             twitch["client_id"],
             token_manager,
             batch_interval
-        ),
-        daemon=True
+        )
     )
     batch_thread.start()
 
@@ -74,8 +73,7 @@ def main():
             token_manager,
             moderation_timeout,
             use_completion
-        ),
-        daemon=True
+        )
     )
     run_thread.start()
 
@@ -86,8 +84,8 @@ def main():
         print("\n[BOT] Exiting on user interrupt...")
     finally:
         stop_event.set()
-        batch_thread.join(timeout=10)
-        run_thread.join(timeout=10)
+        batch_thread.join()
+        run_thread.join()
         loss_report()
 
 if __name__ == "__main__":
